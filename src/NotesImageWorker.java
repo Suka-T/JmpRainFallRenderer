@@ -1,0 +1,303 @@
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.ShortMessage;
+
+import jlib.core.JMPCoreAccessor;
+import jlib.midi.IMidiToolkit;
+import jlib.midi.IMidiUnit;
+import jlib.midi.INotesMonitor;
+import jlib.midi.MidiUtility;
+
+class NotesImageWorker extends ImageWorker {
+    public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
+    public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
+    
+    private int[] indexCache = null;
+    private MidiEvent[][] noteOnEvents = null;
+    private List<Integer> pbBufferX = null;
+    private List<Integer> pbBufferY = null;
+    
+    public NotesImageWorker(int width, int height) {
+        super(width, height);
+        
+        noteOnEvents = new MidiEvent[16][];
+        for (int i=0; i<16; i++) {
+            noteOnEvents[i] = new MidiEvent[128];
+        }
+        pbBufferX = new ArrayList<Integer>();
+        pbBufferY = new ArrayList<Integer>();
+    }
+    
+    public final int[] getTrackCache() {
+        return indexCache;
+    }
+    
+    public void copyTrackCacheFrom(int[] src) {
+        if (indexCache != null) {
+            for (int i=0; i<src.length; i++) {
+                indexCache[i] = src[i];
+            }
+        }
+    }
+    
+    @Override
+    public void run() {
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        Sequence sequence =  midiUnit.getSequence();
+        if (sequence == null) {
+            return;
+        }
+        
+        super.run();
+    }
+    
+    @Override
+    public void disposeImage() {
+        indexCache = null;
+        super.disposeImage();
+    }
+    
+    @Override
+    public int getImageWidth() {
+        return (getWidth() * 3) + LayoutManager.getInstance().getTickBarPosition();
+    }
+
+    @Override
+    protected void paintImage(Graphics g) {
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        Sequence sequence = midiUnit.getSequence();
+        if (sequence == null) {
+            return;
+        }
+        
+        paintBorder(g);
+        paintNotes(g, getLeftMeasTh());
+    }
+    
+    protected void paintBorder(Graphics g) {
+        JmpRainFallRendererWindow mainWindow = JmpRainFallRenderer.MainWindow;
+        g.setColor(LayoutManager.getInstance().getBorderColor());
+        int x = mainWindow.getZeroPosition();
+        int y = 0;
+        if (LayoutManager.getInstance().isVisibleHorizonBorder() == true) {
+            while (y <= getImageHeight()) {
+                g.drawLine(x, y, x + getImageWidth(), y);
+                y += mainWindow.getMeasCellHeight();
+            }
+        }
+        x = mainWindow.getZeroPosition();
+        y = 0;
+        while (x <= getImageWidth()) {
+            if (LayoutManager.getInstance().isVisibleVerticalBorder() == true) {
+                g.drawLine(x, y, x, y + getImageHeight());
+            }
+            x += mainWindow.getMeasCellWidth();
+        }
+    }
+
+    protected void paintNotes(Graphics g, int leftMeas) {
+        Graphics2D g2d = (Graphics2D)g;
+        JmpRainFallRendererWindow mainWindow = JmpRainFallRenderer.MainWindow;
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
+        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+        Sequence sequence = midiUnit.getSequence();
+        if (sequence == null) {
+            return;
+        }
+        
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        
+        paintBorder(g);
+
+        // 上部位置の調整
+        int offsetCoordX = LayoutManager.getInstance().getTickBarPosition();
+        int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
+        int offsetCoordXtoTick = offsetCoordXtoMeas * sequence.getResolution();
+        int totalMeasCount = (int)((double)mainWindow.getDispMeasCount() * 2.0);
+        int keyCount = (127 - mainWindow.getTopMidiNumber());
+        int topOffset = (mainWindow.getMeasCellHeight() * keyCount);
+
+        long absLeftMeas = -(leftMeas);
+        long vpLenTick = (totalMeasCount * sequence.getResolution());
+        long vpStartTick = absLeftMeas * sequence.getResolution() - offsetCoordXtoTick;
+        long vpEndTick = vpStartTick + vpLenTick + (offsetCoordXtoTick * 2);
+
+        int pbMaxHeight = 100;
+        int pbCenterY = (pbMaxHeight / 2) + 100;
+
+        if (LayoutManager.getInstance().isVisiblePbLine() == true) {
+            g.setColor(LayoutManager.getInstance().getPitchbendColor());
+            g.drawLine(0, pbCenterY, getImageWidth(), pbCenterY);
+        }
+        
+        if (notesMonitor.getNumOfTrack() <= 0) {
+            return;
+        }
+        
+        if (indexCache == null) {
+            indexCache = new int[notesMonitor.getNumOfTrack()];
+            for (int i=0; i<indexCache.length; i++) {
+                indexCache[i] = 0;
+            }
+        }
+        
+        Color[] notesColor = LayoutManager.getInstance().getNotesColors();
+        int startMeas = 0;
+        int startOffset = 0;
+        int x = 0;                        
+        int y = 0;
+        int width = 0;
+        int height = 0;
+        int channel = 0;
+        int data1 = 0;
+        //int data2 = 0;
+        
+        //for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
+        for (int trkIndex = 0; trkIndex < notesMonitor.getNumOfTrack(); trkIndex++) {
+            for (int i=0; i<16; i++) {
+                for (int j=0; j<128; j++) {
+                    noteOnEvents[i][j] = null;
+                }
+            }
+            
+            pbBufferX.clear();
+            pbBufferY.clear();
+            
+            boolean notCache = true;
+            /*
+            if (notesMonitor.getNumOfNotes() >= 1000000) {
+                // TODO ノーツ100万以上はキャッシュを使用することで高速化する。
+                //       ただし、バイナリ構成によってバグるため要検討
+                notCache = false;
+            }
+            */
+            int startIndex = indexCache[trkIndex];
+            if (vpEndTick > midiUnit.getTickLength() - (totalMeasCount * sequence.getResolution())) {
+                // 終端付近は取り逃さないようにする 
+                notCache = true;
+            }
+                    
+            for (int i = startIndex; i <  notesMonitor.getNumOfTrackEvent(trkIndex); i++) {
+                // Midiメッセージを取得
+                MidiEvent event = notesMonitor.getTrackEvent(trkIndex, i);
+                if (event == null) {
+                    continue;
+                }
+                
+                if (vpEndTick < event.getTick()) {
+                    // 描き残しがあるNoteOnが無いようにする 
+                    boolean isExestsNoteOn = false;
+                    for (int ch = 0; ch < 16; ch++) {
+                        for (int midiNoIndex = 0; midiNoIndex < 128; midiNoIndex++) {
+                            if (noteOnEvents[ch][midiNoIndex] != null) {
+                                isExestsNoteOn = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (isExestsNoteOn == false) {
+                        if (notCache == false) {
+                            indexCache[trkIndex] = i;
+                        }
+                        break;
+                    }
+                }
+                
+                MidiMessage message = event.getMessage();
+                if (message instanceof ShortMessage) {
+                    // ShortMessage解析
+                    ShortMessage sMes = (ShortMessage) message;
+                    channel = sMes.getChannel();
+                    data1 = sMes.getData1();
+                    //data2 = sMes.getData2();
+                    
+                    if (toolkit.isNoteOn(sMes) == true) {
+                        // Note ON
+                        noteOnEvents[channel][data1] = event;
+                    }
+                    else if (toolkit.isNoteOff(sMes) == true) {
+                        // Note OFF
+                        MidiEvent endEvent = event;
+                        MidiEvent startEvent = noteOnEvents[channel][data1];
+                        noteOnEvents[channel][data1] = null;
+                        if (startEvent == null) {
+                            // 例外 対のNoteONが無いNoteOff  
+                            continue;
+                        }
+                        else if (endEvent.getTick() <= startEvent.getTick()) {
+                            // 例外 NoteOnとNoteOffのtick矛盾   
+                            continue;
+                        }
+                        else if (vpStartTick > event.getTick()) {
+                            // ビューポート範囲外は無視 
+                            continue;
+                        }
+
+                        // 描画開始
+                        startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution()) + leftMeas;
+                        startOffset = (int) ((double) startEvent.getTick() % (double) sequence.getResolution());
+                        x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+                        y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
+
+                        width = (int) (mainWindow.getMeasCellWidth()
+                                * (double) (endEvent.getTick() - startEvent.getTick()) / sequence.getResolution());
+                        height = mainWindow.getMeasCellHeight();
+                        
+                        // ノーマルカラー
+                        if (width < 2) {
+                            width = 2;
+                        }
+                        g2d.setColor(notesColor[channel]);
+                        g2d.fill3DRect(x, y, width, height, LayoutManager.getInstance().isNotes3D());
+                        
+                    }
+                    else if (toolkit.isPitchBend(sMes) == true) {
+                        if (LayoutManager.getInstance().isVisiblePbLine() == true) {
+                            /* ピッチベンド描画 */
+                            int pbValue = MidiUtility.convertPitchBendValue(sMes) - 8192;
+                            int signed = (pbValue < 0) ? -1 : 1;
+
+                            startMeas = (int) ((double) event.getTick() / (double) sequence.getResolution()) + leftMeas;
+                            startOffset = (int) ((double) event.getTick() % (double) sequence.getResolution());
+                            x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+
+                            int absPbValue = signed * pbValue;
+                            y = pbCenterY - (signed * ((absPbValue * pbMaxHeight) / 8192));
+
+                            // PB描画
+                            Color pbColor = notesColor[channel];
+                            int pastX = 0;
+                            int pastY = pbCenterY;
+                            if (pbBufferX.isEmpty() == false) {
+                                pastX = pbBufferX.get(pbBufferX.size() - 1);
+                                pastY = pbBufferY.get(pbBufferY.size() - 1);
+                            }
+
+                            float lineWidth = 2.0f;
+                            Graphics2D g2 = (Graphics2D) g;
+                            BasicStroke stroke = new BasicStroke(lineWidth);
+                            g2.setStroke(stroke);
+                            g2.setColor(pbColor);
+                            g2.drawLine(pastX, pastY, x, pastY);
+                            g2.drawLine(x, pastY, x, y);
+                            pbBufferX.add(x);
+                            pbBufferY.add(y);
+                            g2.setStroke(new BasicStroke(1.0f));
+                        }
+                    }
+                }
+            } /* Trk End */
+        }
+    }
+}
