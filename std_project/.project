@@ -16,9 +16,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>source</name>
+			<name>std_src</name>
 			<type>2</type>
-			<locationURI>copy_PARENT/std_src</locationURI>
+			<location>C:/Users/tuka6/Documents/GitHub/JmpRainFallRenderer/std_src</location>
 		</link>
 	</linkedResources>
 	<variableList>

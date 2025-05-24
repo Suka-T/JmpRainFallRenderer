@@ -1,4 +1,5 @@
 import jmp.JMPLoader;
+import plg.JmpRainFallRenderer;
 import std.StandAlonePluginInvoker;
 
 public class JmpRainFallRenderer_std {
