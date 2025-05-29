@@ -6,9 +6,10 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/JMP"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/JMPLIB"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/MKJMP"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JmpRainFallRenderer"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/MKJMP"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JMPLIB"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JMP"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JmpSideFlowRenderer"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
