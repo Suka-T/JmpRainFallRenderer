@@ -1,6 +1,8 @@
-package plg;
+
 
 import gui.JrfrRendererWindow;
+import plg.AbstractRenderPlugin;
+import plg.SystemProperties;
 
 public class JmpRainFallRenderer extends AbstractRenderPlugin {
 
