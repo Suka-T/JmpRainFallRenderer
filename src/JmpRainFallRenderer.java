@@ -13,7 +13,7 @@ public class JmpRainFallRenderer extends AbstractRenderPlugin {
     public JmpRainFallRenderer() {
     	super();
     	
-    	SystemProperties.DEFAULT_KEY_WIDTH = 200;
+    	SystemProperties.DEFAULT_KEY_WIDTH = 120;
     }
     
     protected void createMainWindow() {

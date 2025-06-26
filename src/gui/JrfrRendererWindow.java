@@ -12,6 +12,16 @@ public class JrfrRendererWindow extends RendererWindow {
 		super();
 		this.setTitle("JRFR");
 	}
+	
+	@Override
+	public int getOrgWidth() {
+		return DEFAULT_WINDOW_HEIGHT;
+	}
+
+	@Override
+	public int getOrgHeight() {
+		return DEFAULT_WINDOW_WIDTH;
+	}
 
 	@Override
     protected void makeKeyboardRsrc() {
