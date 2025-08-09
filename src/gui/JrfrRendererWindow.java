@@ -166,6 +166,16 @@ public class JrfrRendererWindow extends RendererWindow {
 
     @Override
     protected int getEffectWidth(int dir) {
-        return (dir < 0) ? 3 : 0;
+        return (dir < 0) ? 3 : 4;
+    }
+    
+    @Override
+    protected int getInfoStrX() {
+        return 10;
+    }
+    
+    @Override
+    protected int getInfoStrY() {
+        return 20;
     }
 }
