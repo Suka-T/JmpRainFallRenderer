@@ -1,5 +1,5 @@
 cursor.color=9400d3
-cursor.effect.color=9400d3
+cursor.effect.color=ffffff
 cursor.type=keyboard
 cursor.position=top
 info.visible=true
@@ -19,6 +19,7 @@ notes.color9=33FF66
 notes.color10=FF3381
 notes.color11=33FFFF
 notes.color12=E433FF
+notes.border.colorRGB=1.5
 player.bdcolor=202020
 player.bgcolor=111111
 player.colorrule=track

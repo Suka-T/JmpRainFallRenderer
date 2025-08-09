@@ -36,7 +36,9 @@ rem --- SoftMaxHeapSizeをXmsとXmxの中間に設定 ---
 set /a SOFT_MAX=(%MAX_HEAP% + %INIT_HEAP%) / 2
 
 rem --- JVMオプション組み立て ---
-set JVM_OPTS=-XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:SoftMaxHeapSize=%SOFT_MAX%G -Xmx%MAX_HEAP%G -Xms%INIT_HEAP%G
+rem set JVM_OPTS=-XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:SoftMaxHeapSize=%SOFT_MAX%G -Xmx%MAX_HEAP%G -Xms%INIT_HEAP%G
+set JVM_OPTS=-XX:+UseZGC -XX:ParallelGCThreads=8 -XX:ConcGCThreads=4 -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:SoftMaxHeapSize=%SOFT_MAX%G -Xmx%MAX_HEAP%G -Xms%INIT_HEAP%G
+rem set JVM_OPTS=-XX:+UseG1GC -XX:ParallelGCThreads=8 -XX:ConcGCThreads=4 -XX:MaxGCPauseMillis=50 -XX:SoftMaxHeapSize=%SOFT_MAX%G -Xmx%MAX_HEAP%G -Xms%INIT_HEAP%G
 
 rem --- Java実行 ---
 set JAVA_HOME=jre
