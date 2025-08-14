@@ -11,17 +11,20 @@ public class JmpRainFallRenderer extends AbstractRenderPlugin {
 
     public JmpRainFallRenderer() {
         super();
-
-        SystemProperties.DEFAULT_KEY_WIDTH = 120;
     }
 
     protected void createMainWindow() {
-        MainWindow = new JrfrRendererWindow();
+        MainWindow = new JrfrRendererWindow(
+                SystemProperties.getInstance().getWindowWidth(), 
+                SystemProperties.getInstance().getWindowHeight());
         MainWindow.init();
     }
 
     @Override
     public void initialize() {
+        SystemProperties.DEFAULT_KEY_WIDTH = 120;
+        SystemProperties.DIM_CALC_FUNC = 1;
+        
         super.initialize();
 
         AbstractRenderPlugin.MainWindow.setTitle("JRFR");

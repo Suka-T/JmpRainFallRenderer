@@ -5,22 +5,23 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 
 import layout.LayoutManager;
+import plg.SystemProperties;
 
 public class JrfrRendererWindow extends RendererWindow {
 
-    public JrfrRendererWindow() {
-        super();
+    public JrfrRendererWindow(int winW, int winH) {
+        super(winW, winH);
         this.setTitle("JRFR");
     }
 
     @Override
     public int getOrgWidth() {
-        return DEFAULT_WINDOW_HEIGHT;
+        return SystemProperties.getInstance().getDimHeight();
     }
 
     @Override
     public int getOrgHeight() {
-        return DEFAULT_WINDOW_WIDTH;
+        return SystemProperties.getInstance().getDimWidth();
     }
 
     @Override
